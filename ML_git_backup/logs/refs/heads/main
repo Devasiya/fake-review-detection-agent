@@ -1,0 +1,8 @@
+0000000000000000000000000000000000000000 e1b5dfc21e90654368222173bb8f8c1c69ba8c16 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774528174 +0530	commit (initial): Initial commit - EDA and feature engineering started
+e1b5dfc21e90654368222173bb8f8c1c69ba8c16 c1ce62e6edbd6f02c8b4a65663d1220420f1e166 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774528316 +0530	commit (amend): EDA and feature creation
+c1ce62e6edbd6f02c8b4a65663d1220420f1e166 c1ce62e6edbd6f02c8b4a65663d1220420f1e166 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774528429 +0530	Branch: renamed refs/heads/master to refs/heads/main
+c1ce62e6edbd6f02c8b4a65663d1220420f1e166 c1ce62e6edbd6f02c8b4a65663d1220420f1e166 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774528436 +0530	Branch: renamed refs/heads/main to refs/heads/main
+c1ce62e6edbd6f02c8b4a65663d1220420f1e166 23aff800cb41a60b72aeb91dd79de8bf09e14929 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774530117 +0530	commit: Feature engineering ,rule-based scoring
+23aff800cb41a60b72aeb91dd79de8bf09e14929 eccd4744bbb8a155d4d7412521aec79cbb738c19 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774534597 +0530	commit: models training and comparing ,hybrid score and values
+eccd4744bbb8a155d4d7412521aec79cbb738c19 aa584eb94b310d456161a95496d901410e6ded7a Devasiya <136882202+Devasiya@users.noreply.github.com> 1774545371 +0530	commit: Agentic AI Layer
+aa584eb94b310d456161a95496d901410e6ded7a d876a3703d759b78644538f3bffd2c24b12919a6 Devasiya <136882202+Devasiya@users.noreply.github.com> 1774546124 +0530	commit: analysis, visualization and data preparation for backend
