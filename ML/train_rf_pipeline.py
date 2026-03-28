@@ -8,10 +8,10 @@ from sklearn.pipeline import Pipeline
 import joblib
 
 # -----------------------------
-# 1️⃣ Set paths
+# 1️⃣ Paths
 # -----------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_PATH = os.path.join(BASE_DIR, 'data', 'yelp.csv')   # fixed path
+DATA_PATH = os.path.join(BASE_DIR, 'data', 'yelp.csv')
 MODEL_DIR = os.path.join(BASE_DIR, 'model')
 os.makedirs(MODEL_DIR, exist_ok=True)
 MODEL_PATH = os.path.join(MODEL_DIR, 'rf_pipeline.pkl')
@@ -19,59 +19,111 @@ MODEL_PATH = os.path.join(MODEL_DIR, 'rf_pipeline.pkl')
 # -----------------------------
 # 2️⃣ Load dataset
 # -----------------------------
-if not os.path.exists(DATA_PATH):
-    raise FileNotFoundError(f"Dataset not found at {DATA_PATH}")
 df = pd.read_csv(DATA_PATH)
 
 # -----------------------------
-# 3️⃣ Feature engineering
+# 3️⃣ Feature Engineering (NUMERIC)
 # -----------------------------
 df['review_length'] = df['text'].apply(len)
 df['word_count'] = df['text'].apply(lambda x: len(x.split()))
 df['avg_word_length'] = df['review_length'] / (df['word_count'] + 1)
+
 df['engagement'] = df['cool'] + df['useful'] + df['funny']
 df['engagement_ratio'] = df['engagement'] / (df['review_length'] + 1)
+
 df['extreme_rating'] = df['stars'].apply(lambda x: 1 if x in [1, 5] else 0)
 
-# Rule-based suspicious score
-df['suspicious_score_v2'] = (
-    (df['review_length'] < 50).astype(int) +
-    (df['word_count'] < 10).astype(int) +
-    (df['engagement'] == 0).astype(int) +
-    df['extreme_rating'].astype(int)
-)
+# -----------------------------
+# 🔥 4️⃣ TEXT FEATURES (CRITICAL FIX)
+# -----------------------------
+def add_text_features(df):
+    spam_words = ["buy now", "limited offer", "click here", "free", "discount"]
+
+    df['has_spam_words'] = df['text'].str.lower().apply(
+        lambda x: int(any(word in x for word in spam_words))
+    )
+
+    df['exclamation_count'] = df['text'].apply(lambda x: x.count("!"))
+
+    df['uppercase_ratio'] = df['text'].apply(
+        lambda x: sum(1 for c in x if c.isupper()) / (len(x) + 1)
+    )
+
+    return df
+
+df = add_text_features(df)
 
 # -----------------------------
-# 4️⃣ Prepare features & target
+# 🔥 5️⃣ LABEL CREATION (IMPROVED)
+# -----------------------------
+def create_label(row):
+    text = row['text'].lower()
+
+    # strong spam signals
+    if any(word in text for word in ["buy now", "limited offer", "click here"]):
+        return 1
+
+    if text.count("!") >= 3:
+        return 1
+
+    # weak suspicious patterns
+    if row['has_spam_words'] == 1 and row['engagement'] == 0:
+        return 1
+
+    return 0
+
+df['target'] = df.apply(create_label, axis=1)
+
+# -----------------------------
+# 6️⃣ Features & Target
 # -----------------------------
 numeric_features = [
     'stars', 'cool', 'useful', 'funny',
     'review_length', 'engagement', 'word_count',
-    'avg_word_length', 'engagement_ratio', 'extreme_rating'
+    'avg_word_length', 'engagement_ratio', 'extreme_rating',
+
+    # 🔥 NEW TEXT FEATURES
+    'has_spam_words',
+    'exclamation_count',
+    'uppercase_ratio'
 ]
 
-df['suspicious_binary'] = df['suspicious_score_v2'].apply(lambda x: 0 if x <= 1 else 1)
-y = df['suspicious_binary']
 X = df[numeric_features]
+y = df['target']
 
 # -----------------------------
-# 5️⃣ Train/test split
+# 7️⃣ Train/Test Split
 # -----------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
+## -----------------------------
+# 8️⃣ Train Model (WITH CALIBRATION)
 # -----------------------------
-# 6️⃣ Train Random Forest pipeline
-# -----------------------------
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+from sklearn.calibration import CalibratedClassifierCV
+
+rf_model = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=10,
+    random_state=42
+)
+
+calibrated_model = CalibratedClassifierCV(
+    rf_model,
+    method='sigmoid',   # better for small/medium data
+    cv=5                # important for proper calibration
+)
+
 rf_pipe = Pipeline([
-    ('classifier', rf_model)
+    ('classifier', calibrated_model)
 ])
+
 rf_pipe.fit(X_train, y_train)
 
 # -----------------------------
-# 7️⃣ Save pipeline
+# 9️⃣ Save Model
 # -----------------------------
 joblib.dump(rf_pipe, MODEL_PATH)
-print(f"Saved trained pipeline to {MODEL_PATH}")
+
+print(f"✅ Model saved at {MODEL_PATH}")

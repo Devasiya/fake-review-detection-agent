@@ -1,13 +1,136 @@
-// controllers/reviewController.js
+// const Review = require('../models/Review');
+// const { analyzeReview } = require('../services/aiService');
+
+
+// // 📝 Submit Review
+// exports.createReview = async (req, res) => {
+//   try {
+//     const { content, rating, cool = 0, useful = 0, funny = 0 } = req.body;
+
+//     // 🔥 Call ML service
+//     const aiResult = await analyzeReview({
+//       stars: rating,
+//       content,
+//       cool,
+//       useful,
+//       funny
+//     });
+
+//     /*
+//       aiResult =
+//       {
+//         aiScore,
+//         confidence,
+//         model_confidence,
+//         rule_confidence,
+//         label,
+//         hybrid_label,
+//         agentic_action
+//       }
+//     */
+
+//     // 🧠 Fallbacks (for safety if ML misses fields)
+//     const confidence = aiResult.confidence ?? 0;
+//     const model_confidence = aiResult.model_confidence ?? 0;
+//     const rule_confidence = aiResult.rule_confidence ?? 0;
+
+//     // 📝 Create Review
+//     const review = await Review.create({
+//       user: req.user._id,
+//       content,
+//       rating,
+//       cool,
+//       useful,
+//       funny,
+
+//       // 🔥 AI DATA
+//       aiScore: aiResult.aiScore,
+//       confidence,
+//       model_confidence,
+//       rule_confidence,
+
+//       label: aiResult.label,
+//       hybrid_label: aiResult.hybrid_label,
+//       status: aiResult.agentic_action
+//     });
+
+//     const populatedReview = await review.populate("user", "name email");
+
+//     res.status(201).json({
+//       success: true,
+//       review: populatedReview
+//     });
+
+//   } catch (error) {
+//     console.error("Create review error:", error.message);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+// // 📝 Get ALL Reviews (with optional filters)
+// exports.getReviews = async (req, res) => {
+//   try {
+//     const { label, status, minConfidence, maxConfidence } = req.query;
+
+//     let filter = {};
+
+//     // 🔍 Filters
+//     if (label) filter.label = label;
+//     if (status) filter.status = status;
+
+//     if (minConfidence || maxConfidence) {
+//       filter.confidence = {};
+//       if (minConfidence) filter.confidence.$gte = Number(minConfidence);
+//       if (maxConfidence) filter.confidence.$lte = Number(maxConfidence);
+//     }
+
+//     const reviews = await Review.find(filter)
+//       .populate("user", "name email")
+//       .sort({ createdAt: -1 });
+
+//     res.json({
+//       total: reviews.length,
+//       reviews,
+//     });
+
+//   } catch (error) {
+//     console.error("Get reviews error:", error.message);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+// // 📝 Get Review by ID
+// exports.getReviewById = async (req, res) => {
+//   try {
+//     const review = await Review.findById(req.params.id)
+//       .populate("user", "name email");
+
+//     if (!review) {
+//       return res.status(404).json({ message: "Review not found" });
+//     }
+
+//     res.json(review);
+
+//   } catch (error) {
+//     console.error("Get review by ID error:", error.message);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+
 const Review = require('../models/Review');
 const { analyzeReview } = require('../services/aiService');
+
 
 // 📝 Submit Review
 exports.createReview = async (req, res) => {
   try {
     const { content, rating, cool = 0, useful = 0, funny = 0 } = req.body;
 
-    // 1️⃣ Call AI service to get ML + agentic predictions
+    // 🔥 Call ML service
     const aiResult = await analyzeReview({
       stars: rating,
       content,
@@ -16,16 +139,33 @@ exports.createReview = async (req, res) => {
       funny
     });
 
+    console.log("AI RESULT:", aiResult); // ✅ DEBUG (VERY IMPORTANT)
+
     /*
-      aiResult = {
-        aiScore: 0.82,
-        label: "fake",
-        hybrid_label: 2,
-        agentic_action: "Hide review & alert moderator"
+      Expected:
+      {
+        aiScore,
+        confidence,
+        model_confidence,
+        rule_confidence,
+        label,
+        hybrid_label,
+        agentic_action
       }
     */
 
-    // 2️⃣ Create review document
+    // 🧠 SAFE FALLBACKS
+    const aiScore = aiResult.aiScore ?? 0;
+
+    const confidence = aiResult.confidence ?? 0;
+    const model_confidence = aiResult.model_confidence ?? 0;
+    const rule_confidence = aiResult.rule_confidence ?? 0;
+
+    const label = aiResult.label ?? "real";
+    const hybrid_label = aiResult.hybrid_label ?? 0;
+    const status = aiResult.agentic_action ?? "No action";
+
+    // 📝 Create Review
     const review = await Review.create({
       user: req.user._id,
       content,
@@ -33,13 +173,18 @@ exports.createReview = async (req, res) => {
       cool,
       useful,
       funny,
-      aiScore: aiResult.aiScore,
-      label: aiResult.label,
-      hybrid_label: aiResult.hybrid_label,
-      status: aiResult.agentic_action // fully aligned with Agentic AI
+
+      // 🔥 AI DATA
+      aiScore,
+      confidence,
+      model_confidence,
+      rule_confidence,
+
+      label,
+      hybrid_label,
+      status
     });
 
-    // 3️⃣ Optional: populate user details
     const populatedReview = await review.populate("user", "name email");
 
     res.status(201).json({
@@ -53,31 +198,42 @@ exports.createReview = async (req, res) => {
   }
 };
 
-// 📝 Get Reviews (with pagination & filtering)
+
+// 📝 Get ALL Reviews (with filters)
 exports.getReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 5, label, status } = req.query;
+    const { label, status, minConfidence, maxConfidence } = req.query;
 
-    // Build filter
     let filter = {};
-    if (label) filter.label = label; // "real" / "fake"
-    if (status) filter.status = status; // Agentic AI status
 
-    // Fetch reviews
+    // 🔍 Label filter
+    if (label && label !== "All") {
+      filter.label = label;
+    }
+
+    // 🔍 Status filter
+    if (status && status !== "All") {
+      filter.status = status;
+    }
+
+    // 🔍 Confidence filter
+    if (minConfidence || maxConfidence) {
+      filter.confidence = {};
+
+      if (minConfidence)
+        filter.confidence.$gte = Number(minConfidence);
+
+      if (maxConfidence)
+        filter.confidence.$lte = Number(maxConfidence);
+    }
+
     const reviews = await Review.find(filter)
       .populate("user", "name email")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
-
-    // Total count
-    const total = await Review.countDocuments(filter);
+      .sort({ createdAt: -1 });
 
     res.json({
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / limit),
-      reviews
+      total: reviews.length,
+      reviews,
     });
 
   } catch (error) {
@@ -86,13 +242,16 @@ exports.getReviews = async (req, res) => {
   }
 };
 
+
 // 📝 Get Review by ID
 exports.getReviewById = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id)
       .populate("user", "name email");
 
-    if (!review) return res.status(404).json({ message: "Review not found" });
+    if (!review) {
+      return res.status(404).json({ message: "Review not found" });
+    }
 
     res.json(review);
 

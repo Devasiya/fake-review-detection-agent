@@ -1,4 +1,3 @@
-// models/Review.js
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema(
@@ -11,7 +10,7 @@ const reviewSchema = new mongoose.Schema(
     business: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Business',
-      required: false // optional, if you have businesses
+      required: false
     },
     content: {
       type: String,
@@ -37,24 +36,54 @@ const reviewSchema = new mongoose.Schema(
       default: 0
     },
 
-    // ⚡ AI / Agentic AI fields
+    // 🔥 AI FIELDS
     aiScore: {
       type: Number,
       default: 0
     },
+
+    confidence: {
+      type: Number, // final hybrid confidence %
+      default: 0
+    },
+
+    model_confidence: {
+      type: Number,
+      default: 0
+    },
+
+    rule_confidence: {
+      type: Number,
+      default: 0
+    },
+    hybrid_score: {
+      type: Number,
+      default: 0
+    },
+
     label: {
       type: String,
       enum: ['real', 'fake'],
       default: 'real'
     },
+
     hybrid_label: {
       type: Number,
-      enum: [0, 1, 2], // 0 = Normal, 1 = Mildly suspicious, 2 = Highly suspicious
+      enum: [0, 1, 2],
       default: 0
     },
+    
+
     status: {
       type: String,
-      enum: ['visible', 'flagged', 'Hide review & alert moderator', 'Flag for manual review', 'No action'],
+      enum: [
+        'visible',
+        'flagged',
+        'Hide review & alert moderator',
+        'Flag for manual review',
+        'No action',
+        'Needs human review' // ✅ NEW
+      ],
       default: 'visible'
     }
   },
