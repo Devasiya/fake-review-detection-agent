@@ -32,7 +32,7 @@ export default function SubNavbar() {
     { name: "About", href: "/about", icon: Info },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Review Table", href: "/reviews", icon: Table },
-    { name: "Submit Review", href: "/submit", icon: PlusCircle },
+    { name: "Submit Review", href: "/submitReview", icon: PlusCircle },
     { name: "Profile", href: "/profile", icon: User },
   ];
 

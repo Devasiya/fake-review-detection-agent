@@ -164,6 +164,7 @@ exports.createReview = async (req, res) => {
     const label = aiResult.label ?? "real";
     const hybrid_label = aiResult.hybrid_label ?? 0;
     const status = aiResult.agentic_action ?? "No action";
+    const hybrid_score = aiResult.hybrid_score ?? aiScore;
 
     // 📝 Create Review
     const review = await Review.create({
@@ -179,6 +180,7 @@ exports.createReview = async (req, res) => {
       confidence,
       model_confidence,
       rule_confidence,
+      hybrid_score,
 
       label,
       hybrid_label,
@@ -260,3 +262,4 @@ exports.getReviewById = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+

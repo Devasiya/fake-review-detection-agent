@@ -116,7 +116,7 @@ export default function Home() {
           <a href="/reviews" className="bg-gradient-to-r from-pink-500 to-indigo-500 text-white px-6 py-3 rounded-lg shadow">
             Browse Review
           </a>
-          <a href="/submit" className="bg-gradient-to-r from-pink-500 to-indigo-500 text-white px-6 py-3 rounded-lg shadow">
+          <a href="/submitReview" className="bg-gradient-to-r from-pink-500 to-indigo-500 text-white px-6 py-3 rounded-lg shadow">
             Submit Review
           </a>
         </div>
